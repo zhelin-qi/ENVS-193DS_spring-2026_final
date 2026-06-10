@@ -27,10 +27,9 @@ library(DHARMa)       # simulation-based GLM diagnostics
 library(ggeffects)    # model prediction extraction for plotting
 library(flextable)    # formatted tables in PDF output
 
-# read in the nest box occupancy dataset (Lujan et al. 2023)
+# read in the nest box occupancy dataset
 nests <- read_csv(here("data", "nest_data_final.csv"))
 
-# read in personal dog satisfaction data
 # skips the two title rows and one blank row before the column headers
 dog_data <- read_csv(
   here("data", "dog_satisfaction_data.csv"),
