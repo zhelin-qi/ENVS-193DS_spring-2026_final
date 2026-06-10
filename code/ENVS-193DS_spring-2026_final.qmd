@@ -140,7 +140,7 @@ model1 <- glm(
   family = binomial  # binomial family for binary (0/1) response variable
 )
 
-# model 2: interaction between tree height and ant species
+
 # allows the effect (slope) of height to differ across ant species
 model2 <- glm(
   case_control ~ height_cm * ant_species, 
@@ -163,7 +163,7 @@ The best model as determined by Akaike's Information Criterion (AICc) was the mo
 ```{r diagnostics, fig.height=5, fig.width=9}
 # simulate residuals from the selected model using the DHARMa package
 # DHARMa generates scaled residuals
-# show residuals uniformly distributed between 0 and 1
+# show residuals uniformly distributed
 model2_simresid <- simulateResiduals(
   fittedModel = model2,  # the selected interaction model
   plot        = TRUE    
@@ -241,7 +241,6 @@ ggplot() +
 
 ```{r predict-600cm}
 # calculate predicted probability of nest occurrence at tree height = 600 cm
-# for each of the three ant species using the selected interaction model
 preds_600 <- ggpredict(
   model2,
   # fix height at 600 cm
@@ -327,14 +326,18 @@ ggplot(
 ) +
   # add 95% confidence interval band around the regression line 
   geom_smooth(
-    method    = "lm",         # fit a linear model smoother
-    se        = TRUE,         # display 95% CI shading
-    color     = "#7B2D8B",    # dark purple line
-    fill      = "#C77CFF",    # light purple CI ribbon
+    # fit a linear model smoother
+    method    = "lm",
+    # display 95% CI shading
+    se        = TRUE,
+    # dark purple line
+    color     = "#7B2D8B",
+    # light purple CI ribbon
+    fill      = "#C77CFF",
     alpha     = 0.25,
     linewidth = 1
   ) +
-  # plot individual daily observations on top of the CI band
+  # plot individual daily observations
   geom_point(
     size  = 3,
     color = "#7B2D8B",
