@@ -1,0 +1,361 @@
+---
+title: "ENVS 193DS Spring 2026 Final"
+author: "Zhelin Qi"
+date: "June 9, 2026"
+format:
+  pdf:
+    toc: true
+    toc-depth: 3
+    number-sections: true
+    code-overflow: wrap
+execute:
+  warning: false
+  message: false
+  echo: true
+---
+
+**GitHub Repository:** [https://github.com/zhelin-qi/ENVS-193DS_spring-2026_final](https://github.com/zhelin-qi/ENVS-193DS_spring-2026_final)
+
+## Set up
+
+```{r setup}
+# load required packages
+library(tidyverse)    # data wrangling and ggplot2
+library(here)         # reproducible relative file paths
+library(MuMIn)        # AICc model comparison
+library(DHARMa)       # simulation-based GLM diagnostics
+library(ggeffects)    # model prediction extraction for plotting
+library(flextable)    # formatted tables in PDF output
+
+# read in the nest box occupancy dataset (Lujan et al. 2023)
+nests <- read_csv(here("data", "nest_data_final.csv"))
+
+# read in personal dog satisfaction data
+# skips the two title rows and one blank row before the column headers
+dog_data <- read_csv(
+  here("data", "dog_satisfaction_data.csv"),
+  skip = 3,
+  show_col_types = FALSE
+) |>
+  # keep only rows that are actual dated observations
+  filter(!is.na(date), str_starts(date, "2026"))
+```
+
+\newpage
+
+## Problem 1. Research writing
+
+### a. Transparent statistical methods
+
+In part 1, my co-worker used **logistic regression**. The response variable is binary (American Avocet microhabitat use: present or absent) and the predictor is continuous (distance to water edge), which is the defining setup for a logistic regression that models the log-odds of a binary outcome as a linear function of a predictor. In part 2, they used a **chi-square test of independence**. This test evaluates whether two categorical variables — bird species (3 levels: American Avocet, Forster's Tern, Black-necked Stilt) and habitat type (5 levels: managed pond, non-tidal marsh, salt pond, tidal marsh, tidal mudflat) — are statistically independent of one another, which matches the structure described in the statement.
+
+### b. Suggestions for rewriting
+
+**Part 1 (rewritten):** Distance to the water edge was a significant predictor of American Avocet microhabitat use; avocets were more likely to use microhabitats that were closer to the water's edge compared to those farther away.
+
+**Part 2 (rewritten):** The three shorebird species were not equally distributed across habitat types — certain species were disproportionately found in specific habitats, indicating that habitat associations differ meaningfully among American Avocets, Forster's Terns, and Black-necked Stilts.
+
+### c. Further analysis
+
+One additional variable that could influence the probability of American Avocet microhabitat use is **native plant percent cover** (a continuous variable measured as the percentage of ground area within a 1 m² plot covered by native vegetation, ranging from 0–100%, assessed via point-intercept transects). Native plant cover could increase American Avocet habitat use probability because restored native vegetation structures the shallow-water foraging areas and supports the aquatic invertebrate prey communities that avocets rely on, while also providing physical cover that may reduce perceived predation risk during foraging.
+
+\newpage
+
+## Problem 2. Data analysis
+
+### a. Clean and wrangle
+
+```{r clean-nests}
+# create cleaned nest data object
+nests_clean <- nests |>
+  # select the three columns of interest
+  select(case_control, height_cm, ant_species) |>
+  # keep only the three focal ant species
+  filter(ant_species %in% c("AB", "RRB", "BBR")) |>
+  # set factor level order
+  mutate(
+    ant_species = factor(ant_species, levels = c("AB", "RRB", "BBR"))
+  ) |>
+  # add a column with the full scientific name for each ant species code
+  mutate(
+    scientific_name = case_when(
+      ant_species == "AB"  ~ "Crematogaster sjostedti",
+      ant_species == "RRB" ~ "Crematogaster mimosae",
+      ant_species == "BBR" ~ "Crematogaster nigriceps"
+    )
+  )
+
+# display the structure
+str(nests_clean)
+
+# display 10 random rows
+slice_sample(nests_clean, n = 10)
+```
+
+### b. Response variable
+
+In this dataset, a **1** indicates that the tree was a nest-tree — a tree in which an active bird nest was found during the survey — while a **0** indicates that the tree was a control (available) tree sampled nearby that did not contain a nest. Biologically, 1 means a bird chose that particular tree as a nesting site and 0 means a bird did not, so the response variable represents the binary outcome of nest site occupancy for any bird species.
+
+### c. Purpose of study
+
+**Tree height (`height_cm`)** is a **continuous variable** measured in centimeters. As tree height increases, the probability of nest occurrence would likely **increase** because taller trees offer more nesting locations farther from the ground where terrestrial predators can reach, may provide more structural complexity for nest attachment, and are likely more visible to birds surveying potential nest sites. The authors describe tree height as a key structural variable measured for each tree in the Methods section, "Data collection" subsection, first paragraph (Lujan et al. 2023).
+
+**Acacia ant species (`ant_species`)** is a **categorical variable** with three levels: *Crematogaster sjostedti*, *Crematogaster mimosae*, and *Crematogaster nigriceps*. The probability of nest occurrence would likely be **higher** in trees occupied by the more aggressive and persistent ant species (*C. mimosae* and *C. nigriceps*) because these ants aggressively recruit workers to defend their host tree against intruders, effectively deterring the predators that target bird nests; *C. sjostedti* is less defensive and therefore provides a weaker protective benefit. The authors introduce this biological reasoning in the Introduction, second paragraph, describing symbiotic ants as a "biotic shield" for nesting birds (Lujan et al. 2023).
+
+### d. Table of models
+
+```{r model-table}
+# create a data frame describing each candidate model
+model_table <- data.frame(
+  `Model Number` = c(1, 2),
+  `Model Description` = c(
+    "Predictors: tree height (height_cm) + ant species (ant_species); 
+    additive, no interaction",
+    "Predictors: tree height (height_cm) x ant species (ant_species); 
+    includes interaction term"
+  ),
+  check.names = FALSE
+)
+
+# display as a formatted table
+flextable(model_table) |>
+  set_header_labels(
+    `Model Number`      = "Model Number",
+    `Model Description` = "Model Description"
+  ) |>
+  width(j = 1, width = 1.3) |>    # narrow column for model number
+  width(j = 2, width = 4.5) |>    # wider column for description
+  theme_vanilla()
+```
+
+### e. Run the models
+
+```{r run-models}
+#| output: false
+
+# model 1: additive effects of tree height and ant species 
+model1 <- glm(
+  case_control ~ height_cm + ant_species,  
+  data   = nests_clean,
+  family = binomial  # binomial family for binary (0/1) response variable
+)
+
+# model 2: interaction between tree height and ant species
+# allows the effect (slope) of height to differ across ant species
+model2 <- glm(
+  case_control ~ height_cm * ant_species, 
+  data   = nests_clean,
+  family = binomial
+)
+```
+
+### f. Select the best model
+
+```{r model-selection}
+# compare both models using AICc 
+AICc(model1, model2)
+```
+
+The best model as determined by Akaike's Information Criterion (AICc) was the model including an **interaction between tree height (height_cm) and acacia ant species (ant_species)**, indicating that the relationship between tree height and the probability of bird nest occurrence differs depending on which ant species occupies the tree.
+
+### g. Check the diagnostics
+
+```{r diagnostics, fig.height=5, fig.width=9}
+# simulate residuals from the selected model using the DHARMa package
+# DHARMa generates scaled residuals
+# show residuals uniformly distributed between 0 and 1
+model2_simresid <- simulateResiduals(
+  fittedModel = model2,  # the selected interaction model
+  plot        = TRUE    
+)
+```
+
+### h. Visualize the model predictions
+
+```{r predictions-plot, fig.width=8, fig.height=3.5}
+# generate model predictions
+model2_preds <- ggpredict(
+  model2,
+  terms = c("height_cm [all]", "ant_species")  # vary height continuously
+)
+
+# named vector used to replace species codes with formatted labels
+species_labels <- c(
+  "AB"  = "C. sjostedti",
+  "RRB" = "C. mimosae",
+  "BBR" = "C. nigriceps"
+)
+
+# assemble the plot
+ggplot() +
+  # 95% confidence interval ribbon plotted first
+  geom_ribbon(
+    data  = model2_preds,
+    aes(x = x, ymin = conf.low, ymax = conf.high),
+    fill  = "#1B7837",    # green
+    alpha = 0.20          
+  ) +
+  # predicted probability line from the interaction model
+  geom_line(
+    data      = model2_preds,
+    aes(x = x, y = predicted),
+    color     = "#1B7837",    # green
+    linewidth = 1.1
+  ) +
+  # raw data points on top
+  geom_point(
+    data  = nests_clean,
+    aes(x = height_cm, y = case_control),
+    color = "grey45",
+    alpha = 0.35,         # transparent to show density
+    size  = 1.5
+  ) +
+  # one panel per ant species
+  facet_wrap(
+    ~group,
+    labeller = as_labeller(species_labels)
+  ) +
+  # informative axis labels with units
+  labs(
+    x = "Tree height (cm)",
+    y = "Probability of bird nest occurrence"
+  ) +
+  # remove grey background and gridlines
+  theme_bw() +
+  theme(
+    # remove all gridlines
+    panel.grid       = element_blank(),
+    strip.background = element_rect(fill = "white", color = "grey70"),
+    # italicize species names
+    strip.text       = element_text(face = "italic"),             
+    # no legend needed
+    legend.position  = "none"
+  )
+```
+
+### i. Figure caption
+
+**Figure 1. Predicted probability of bird nest occurrence as a function of tree height for three acacia ant species in an East African savanna.** Grey points show raw observations (1 = nest present, 0 = nest absent; n = 270 trees). Green lines show model-predicted probabilities of nest occurrence derived from a binomial generalized linear model with an interaction term between tree height (cm) and acacia ant species identity; green shaded ribbons show 95% confidence intervals around the predictions. Separate panels show predictions for *Crematogaster sjostedti* (left), *Crematogaster mimosae* (center), and *Crematogaster nigriceps* (right). Data source: Lujan, E., Nielsen, R., Short, Z., Wicks, S., Nderitu Watetu, W., Malingati Khasoha, L., Palmer, T. M., Goheen, J. R., & Alston, J. M. (2023). Data, code, and metadata for: Symbiotic acacia ants drive nesting behavior by birds in an African savanna [Data set]. Zenodo. https://doi.org/10.5281/zenodo.8373322
+
+### j. Calculate model predictions
+
+```{r predict-600cm}
+# calculate predicted probability of nest occurrence at tree height = 600 cm
+# for each of the three ant species using the selected interaction model
+preds_600 <- ggpredict(
+  model2,
+  # fix height at 600 cm
+  terms = c("height_cm [600]", "ant_species")
+)
+
+# display the predictions and their 95% confidence intervals
+preds_600
+```
+
+### k. Interpret your results
+
+At 600 cm (the tallest tree in the dataset), the interaction model predicts the highest probability of nest occurrence in trees occupied by *Crematogaster nigriceps* and *Crematogaster mimosae*, with *Crematogaster sjostedti* trees having substantially lower predicted nest probability at that height (Figure 1, part j predictions). Across all three ant species, tree height is positively associated with the probability of bird nest occurrence, but the slope of this relationship is steepest for *C. nigriceps* and *C. mimosae*, producing the diverging curves visible in Figure 1. Biologically, this pattern aligns with the paper's conclusion that more aggressive ant species — *C. mimosae* and *C. nigriceps* — provide a stronger "biotic shield" against nest predators than the less aggressive *C. sjostedti*; birds therefore benefit most from nesting in tall trees whose resident ants actively deter predators, and this combined advantage of height and ant aggression explains why nest probability increases more steeply with height for trees occupied by *C. mimosae* and *C. nigriceps* (Lujan et al. 2023, Discussion).
+
+\newpage
+
+## Problem 3. Affective and exploratory visualizations
+
+### a. Comparing visualizations
+
+**How are the visualizations different from each other in the way you have represented your data?** The affective visualization from Homework 3 is a hand-drawn piece in which each of the 14 play days is depicted as a sun shape — the diameter of each sun encodes daily playtime duration (minutes) and the warmth of its color (from pale yellow for low satisfaction to deep orange-red for high satisfaction) encodes the satisfaction score — whereas the two exploratory visualizations in Homework 2 are standard ggplot2 charts: a boxplot comparing satisfaction scores between on-leash and off-leash play, and a scatterplot of playtime minutes versus satisfaction level using conventional Cartesian axes.
+
+**What similarities do you see between all your visualizations?** All three visualizations draw on the same underlying dataset (daily playtime minutes, satisfaction level 1–5, and leash status collected from April 17–30, 2026), and all three convey the same general finding — that longer and less restricted play sessions tend to be associated with higher dog satisfaction.
+
+**What patterns do you see in each visualization?** The scatterplot from Homework 2 shows a strong positive linear trend between playtime minutes and satisfaction level, and the boxplot shows that off-leash sessions tend to produce higher satisfaction than on-leash sessions. The affective visualization conveys the same pattern through metaphor: the largest, warmest suns in the drawing correspond to the longest, off-leash park days. These patterns are consistent across visualizations because they represent the same data; the different formats emphasize different facets (leash status versus duration versus overall warmth) rather than producing conflicting stories.
+
+**What feedback did you receive and how did you implement it?** During the week 9 workshop, feedback on my affective visualization centered on two suggestions: (1) make the scale of sizes and colors legible to a viewer unfamiliar with the data by adding a small legend, and (2) show day-to-day variation more explicitly rather than letting similar-satisfaction days blend together. I implemented these by adding a corner legend mapping size to playtime minutes and color to satisfaction level, and by spacing the sun shapes in a loose timeline so individual days are distinguishable. For the exploratory plots, feedback suggested removing gridlines and including axis units, both of which I updated in the Homework 3 revised plots.
+
+### b. Designing an analysis
+
+I propose a **Pearson correlation** to evaluate the strength and direction of the linear relationship between daily playtime duration (minutes, continuous quantitative) and dog satisfaction level (scored 1–5, treated as continuous quantitative). This analysis is appropriate because both variables are quantitative, the research question asks about the *strength of the linear association* rather than a group difference, and Pearson's *r* directly quantifies that association on a standardized scale that is straightforward to interpret; both variables should be approximately normally distributed for this test, an assumption I will check with Shapiro-Wilk tests.
+
+### c. Check assumptions and run analysis
+
+#### Normality assumption check
+
+```{r normality-check}
+# check normality of playtime_minutes using the Shapiro-Wilk test
+shapiro.test(dog_data$playtime_minutes)
+
+# check normality of dog satisfaction level using the Shapiro-Wilk test
+shapiro.test(dog_data$dog_satisfaction_level_1_5)
+```
+
+Both variables do not significantly deviate from normality (Shapiro-Wilk p > 0.05 for both), so the normality assumption for Pearson correlation is met and we proceed with the test.
+
+#### Pearson correlation
+
+```{r pearson-test}
+# run Pearson correlation 
+cor.test(
+  # predictor: daily minutes of play
+  x      = dog_data$playtime_minutes,
+  # response: satisfaction score 1–5
+  y      = dog_data$dog_satisfaction_level_1_5,
+  # Pearson product-moment correlation
+  method = "pearson"
+)
+```
+
+#### Effect size
+
+```{r effect-size}
+# calculate r and r-squared 
+r_value <- cor(
+  dog_data$playtime_minutes,
+  dog_data$dog_satisfaction_level_1_5,
+  method = "pearson"    # Pearson r
+)
+
+# r-squared: coefficient of determination
+r_squared <- r_value^2
+round(r_squared, 3)    # display rounded to 3 decimal places
+```
+
+### d. Create a visualization
+
+```{r satisfaction-plot, fig.width=5, fig.height=4}
+# scatterplot of daily playtime vs dog satisfaction 
+ggplot(
+  dog_data,
+  aes(x = playtime_minutes, y = dog_satisfaction_level_1_5)
+) +
+  # add 95% confidence interval band around the regression line 
+  geom_smooth(
+    method    = "lm",         # fit a linear model smoother
+    se        = TRUE,         # display 95% CI shading
+    color     = "#7B2D8B",    # dark purple line
+    fill      = "#C77CFF",    # light purple CI ribbon
+    alpha     = 0.25,
+    linewidth = 1
+  ) +
+  # plot individual daily observations on top of the CI band
+  geom_point(
+    size  = 3,
+    color = "#7B2D8B",
+    alpha = 0.85
+  ) +
+  # axis labels with units
+  labs(
+    x = "Daily playtime (minutes)",
+    y = "Dog satisfaction level (1-5)"
+  ) +
+  # classic theme: white background, no gridlines
+  theme_classic() +
+  theme(
+    panel.grid = element_blank()    # remove any residual gridlines
+  )
+```
+
+### e. Figure caption
+
+**Figure 2. Relationship between daily playtime duration and dog satisfaction level (April 17–30, 2026).** Purple points show individual daily observations (n = 14 days). The dark purple line shows the linear regression fit between playtime duration (minutes) and post-play satisfaction level (scored 1–5); the light purple shaded band shows the 95% confidence interval around the regression line. A satisfaction score of 1 indicates the dog was very unsatisfied after play; 5 indicates very satisfied. Data collected by Zhelin Qi.
+
+### f. Write about your results
+
+Daily playtime duration was strongly and positively correlated with dog satisfaction level (Pearson *r* = 0.90, *t*(12) = 7.15, *p* < 0.001), with playtime duration explaining approximately 81% of the variation in satisfaction scores (*r*^2^ = 0.81). Dogs showed higher satisfaction on days with longer play sessions — for example, all three days scoring the maximum satisfaction of 5 had play sessions of 80 minutes or more, while the two lowest-scoring days (ratings of 2 and 3) involved sessions under 40 minutes. Although the strong correlation suggests that playtime duration is a primary driver of daily satisfaction, the small sample (n = 14 days over two weeks) and single-dog dataset limit generalizability, and other variables such as leash status, play partner, or weather may also contribute to satisfaction.

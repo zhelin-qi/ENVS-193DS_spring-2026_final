@@ -1,0 +1,46 @@
+﻿Personal Dog Satisfaction Data,,,,,,,,,
+"Daily playtime and dog satisfaction level, 2026-04-17 to 2026-05-28",,,,,,,,,
+,,,,,,,,,
+date,time_of_day,playtime_minutes,dog_satisfaction_level_1_5,weather,temperature_f,leash_status,daily_energy_level_1_5,play_partner,notes
+2026/4/17,Evening,45,4,Sunny,66,On-leash,4,Me,Regular walk and fetch; mostly calm after play.
+2026/4/18,Afternoon,80,5,Sunny,70,Off-leash,5,Me + other dogs,Long park play; very tired and rested quickly.
+2026/4/19,Evening,30,3,Cloudy,62,On-leash,4,Me,Shorter play session; still interested in activity later.
+2026/4/20,Evening,40,3,Sunny,64,On-leash,3,Me,Moderate walk; calm but not fully tired.
+2026/4/21,Afternoon,55,4,Sunny,68,On-leash,4,Me,Walk plus ball play; settled after getting home.
+2026/4/22,Afternoon,90,5,Sunny,72,Off-leash,5,Me + other dogs,Beach/park play; very satisfied after high stimulation.
+2026/4/23,Evening,35,3,Windy,63,On-leash,4,Me,Short play because it was windy; still had some energy.
+2026/4/24,Evening,50,4,Cloudy,61,On-leash,3,Me,Regular walk; mostly calm afterward.
+2026/4/25,Morning,110,5,Sunny,74,Off-leash,5,Me + other dogs,Long outdoor play; ready to rest afterward.
+2026/4/26,Afternoon,75,5,Sunny,69,Off-leash,4,Me,Park walk and exploring; calm for the rest of the day.
+2026/4/27,Evening,25,2,Cloudy,60,On-leash,4,Me,Short session; still tried to continue playing.
+2026/4/28,Evening,45,4,Sunny,65,On-leash,3,Me,Normal play session; satisfied but not exhausted.
+2026/4/29,Afternoon,60,4,Sunny,67,On-leash,4,Me + other dogs,Played with another dog briefly; calm after dinner.
+2026/4/30,Afternoon,85,5,Sunny,71,Off-leash,5,Me,Long field/campus walk; very calm afterward.
+2026/5/1,Morning,70,5,Sunny,73,Off-leash,5,Me + other dogs,Weekend morning park; ran off-leash for a long time.
+2026/5/2,Afternoon,40,3,Cloudy,64,On-leash,3,Me,Short afternoon walk; still had leftover energy.
+2026/5/3,Evening,50,4,Sunny,66,On-leash,4,Me,Evening fetch and walk; calm at bedtime.
+2026/5/4,Evening,35,3,Windy,62,On-leash,3,Me,Windy and cooler; cut play short.
+2026/5/5,Afternoon,65,4,Sunny,68,Off-leash,4,Me,Brief off-leash in open field; satisfied.
+2026/5/6,Afternoon,95,5,Sunny,72,Off-leash,5,Me + other dogs,Long park session with other dogs; very happy afterward.
+2026/5/7,Evening,45,4,Sunny,70,On-leash,4,Me,Regular evening walk; calm at night.
+2026/5/8,Morning,80,5,Sunny,71,Off-leash,5,Me + other dogs,Morning run in park; very tired and content.
+2026/5/9,Afternoon,30,2,Rainy,59,On-leash,3,Me,Light rain; quick walk only; still wanted more.
+2026/5/10,Evening,50,4,Cloudy,63,On-leash,4,Me,Overcast but dry; moderate walk and fetch.
+2026/5/11,Afternoon,75,5,Sunny,69,Off-leash,5,Me,Long off-leash session at field; very relaxed after.
+2026/5/12,Evening,40,3,Cloudy,65,On-leash,3,Me,Short walk; somewhat restless at home later.
+2026/5/13,Afternoon,90,5,Sunny,74,Off-leash,5,Me + other dogs,Warm afternoon at park; great socialization.
+2026/5/14,Morning,60,4,Sunny,70,On-leash,4,Me,Morning leash walk and ball toss; content.
+2026/5/15,Afternoon,55,4,Sunny,71,On-leash,4,Me,Afternoon fetch; calm for rest of day.
+2026/5/16,Evening,35,3,Windy,64,On-leash,3,Me,Gusty wind cut session short; slightly antsy later.
+2026/5/17,Morning,100,5,Sunny,73,Off-leash,5,Me + other dogs,Weekend morning; very long run and play.
+2026/5/18,Afternoon,45,4,Sunny,72,On-leash,4,Me,Afternoon walk; satisfied and calm.
+2026/5/19,Evening,30,3,Cloudy,66,On-leash,3,Me,Brief evening stroll; lingered at every bush.
+2026/5/20,Afternoon,70,5,Sunny,75,Off-leash,5,Me,Open field run; very happy and tired after.
+2026/5/21,Evening,50,4,Sunny,71,On-leash,4,Me,Normal evening session; good energy release.
+2026/5/22,Afternoon,85,5,Sunny,74,Off-leash,5,Me + other dogs,Long park visit; interacted with many dogs.
+2026/5/23,Evening,40,3,Cloudy,67,On-leash,3,Me,Shorter on-leash walk; still a little wound up.
+2026/5/24,Morning,65,4,Sunny,70,Off-leash,4,Me,Morning off-leash at park; good session.
+2026/5/25,Afternoon,55,4,Sunny,73,On-leash,4,Me,Sunday afternoon walk; relaxed after.
+2026/5/26,Evening,35,3,Windy,65,On-leash,3,Me,Windy evening; short walk only.
+2026/5/27,Afternoon,90,5,Sunny,76,Off-leash,5,Me + other dogs,Long session with dog friends; very satisfied.
+2026/5/28,Morning,60,4,Sunny,74,Off-leash,4,Me,Morning off-leash run; calm and content afterward.
